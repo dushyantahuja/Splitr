@@ -1,6 +1,10 @@
 def main():
     # Create a list called people with "Me" as the first item
     people = ["Me"]
+    print("SplitR")
+    print("Splitr makes it simple to split bills, track shared expenses, and settle up with friends — without the awkward math.")
+    print("Whether you're sharing rent, planning a trip, or just grabbing dinner, Splitr keeps everyone on the same page.")
+    print()
 
     # Get names of friends
     while True:
