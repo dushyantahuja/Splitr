@@ -8,8 +8,8 @@ def main():
 
     # Get names of friends
     while True:
-        friend = input("Enter friend name (leave blank to start entering expenses): ")
-        if friend == "":
+        friend = input("Enter friend name (leave blank or '.' to start entering expenses): ")
+        if friend == "" or friend == ".":
             break
         people.append(friend)
     expense_dict = {}
@@ -24,8 +24,8 @@ def main():
     while True:
         while True:
             valid_input = True
-            spender = input("Enter the number of the person spending (blank to exit the program): ")
-            if spender == "":
+            spender = input("Enter the number of the person spending (blank or . to exit the program): ")
+            if spender == "" or spender == ".":
                 break
             spender = spender.strip() # Trim
             if not spender.isdigit() or not (1 <= int(spender) <= len(people)):
@@ -35,13 +35,12 @@ def main():
             else:
                 print("Invalid input, please enter numbers from the list above.")
         # Break out of main loop
-        if spender == "":
+        if spender == "" or spender == ".":
                 break
         spender = int(spender.strip())
         amount = float(input("Enter amount: "))
 
         print("Select friends sharing this expense by entering numbers separated by commas: ")
-        # Following input and check provided by AI
         while True:
             selected_numbers = input("Enter numbers: ").split(",")
             valid_input = True
