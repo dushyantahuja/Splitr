@@ -100,6 +100,12 @@
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn-secondary {
             background: #f0f0f0;
             color: #333;
@@ -203,6 +209,83 @@
             width: auto;
             margin-right: 8px;
         }
+
+        .trip-setup {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 30px;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+        }
+
+        .trip-setup h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .trip-code-display {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px dashed white;
+        }
+
+        .trip-code {
+            font-size: 2em;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin: 10px 0;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #2ecc71;
+        }
+
+        .status-offline {
+            background: #e74c3c;
+        }
+
+        .sync-status {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
     </style>
 </head>
 <body>
@@ -213,51 +296,146 @@
         </div>
 
         <div class="content">
-            <div class="section">
-                <h2>👥 People</h2>
-                <div class="input-group">
-                    <label for="personName">Add Person</label>
-                    <input type="text" id="personName" placeholder="Enter name">
+            <!-- Trip Setup Section -->
+            <div id="tripSetup" class="section">
+                <div class="trip-setup">
+                    <h2>🌍 Trip Setup</h2>
+                    <p style="margin-bottom: 20px;">Create a new trip or join an existing one</p>
+                    
+                    <div class="button-row" style="justify-content: center;">
+                        <button class="btn" onclick="createTrip()">Create New Trip</button>
+                        <button class="btn btn-secondary" onclick="showJoinTrip()">Join Existing Trip</button>
+                        <button class="btn btn-secondary" onclick="useLocalMode()">Use Locally (No Sync)</button>
+                    </div>
+
+                    <div id="joinTripForm" class="hidden" style="margin-top: 20px;">
+                        <input type="text" id="joinTripCode" placeholder="Enter trip code (e.g., ABC123)" 
+                               style="text-transform: uppercase; text-align: center; font-size: 1.2em; margin-bottom: 10px;">
+                        <div class="button-row" style="justify-content: center;">
+                            <button class="btn" onclick="joinTrip()">Join Trip</button>
+                            <button class="btn btn-secondary" onclick="hideJoinTrip()">Cancel</button>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn" onclick="addPerson()">Add Person</button>
-                <div id="peopleList" style="margin-top: 20px;"></div>
             </div>
 
-            <div class="section">
-                <h2>🧾 Expenses</h2>
-                <div class="input-group">
-                    <label for="expenseDesc">Description</label>
-                    <input type="text" id="expenseDesc" placeholder="e.g., Dinner at restaurant">
+            <!-- Trip Info (shown when in a trip) -->
+            <div id="tripInfo" class="section hidden">
+                <div class="alert alert-info">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>Trip Code: <span id="currentTripCode"></span></strong>
+                            <div style="margin-top: 5px;">
+                                <span class="status-indicator" id="syncStatus"></span>
+                                <span id="syncStatusText">Connecting...</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="leaveTrip()">Leave Trip</button>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="expenseAmount">Amount</label>
-                    <input type="number" id="expenseAmount" placeholder="0.00" step="0.01">
-                </div>
-                <div class="input-group">
-                    <label for="expensePaidBy">Paid by</label>
-                    <select id="expensePaidBy"></select>
-                </div>
-                <div class="input-group">
-                    <label>Split between</label>
-                    <div id="participantCheckboxes" class="checkbox-group"></div>
-                </div>
-                <button class="btn" onclick="addExpense()">Add Expense</button>
-                <div id="expensesList" style="margin-top: 20px;"></div>
             </div>
 
-            <div class="section">
-                <h2>💰 Settlement</h2>
-                <button class="btn" onclick="calculateSettlement()">Calculate Who Owes What</button>
-                <button class="btn btn-secondary" onclick="resetAll()">Reset All</button>
-                <button class="btn btn-secondary" onclick="exportData()">Export JSON</button>
-                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import JSON</button>
-                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
-                <div id="results" style="margin-top: 20px;"></div>
+            <!-- Main App Sections (hidden until trip is set) -->
+            <div id="mainApp" class="hidden">
+                <div class="section">
+                    <h2>👥 People</h2>
+                    <div class="input-group">
+                        <label for="personName">Add Person</label>
+                        <input type="text" id="personName" placeholder="Enter name">
+                    </div>
+                    <button class="btn" onclick="addPerson()">Add Person</button>
+                    <div id="peopleList" style="margin-top: 20px;"></div>
+                </div>
+
+                <div class="section">
+                    <h2>🧾 Expenses</h2>
+                    <div class="input-group">
+                        <label for="expenseDesc">Description</label>
+                        <input type="text" id="expenseDesc" placeholder="e.g., Dinner at restaurant">
+                    </div>
+                    <div class="input-group">
+                        <label for="expenseAmount">Amount</label>
+                        <input type="number" id="expenseAmount" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label for="expensePaidBy">Paid by</label>
+                        <select id="expensePaidBy"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Split between</label>
+                        <div id="participantCheckboxes" class="checkbox-group"></div>
+                    </div>
+                    <button class="btn" onclick="addExpense()">Add Expense</button>
+                    <div id="expensesList" style="margin-top: 20px;"></div>
+                </div>
+
+                <div class="section">
+                    <h2>💰 Settlement</h2>
+                    <div class="button-row">
+                        <button class="btn" onclick="calculateSettlement()">Calculate Who Owes What</button>
+                        <button class="btn btn-secondary" onclick="exportData()">Export JSON</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import JSON</button>
+                    </div>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                    <div id="results" style="margin-top: 20px;"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, set, onValue, off, push, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Firebase configuration - YOU NEED TO REPLACE THIS WITH YOUR OWN CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHRHTe9c_wDaqGka1a-0ni3vuO_0xTK6I",
+            authDomain: "splitr-de6c9.firebaseapp.com",
+            databaseURL: "https://splitr-de6c9-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "splitr-de6c9",
+            storageBucket: "splitr-de6c9.firebasestorage.app",
+            messagingSenderId: "903729937125",
+            appId: "1:903729937125:web:0412bd4918c8885427b20c",
+            measurementId: "G-STGC696QMV"
+        };
+
+        let app, database, auth;
+        let currentTripCode = null;
+        let isLocalMode = false;
+        let tripListener = null;
+        let currentUser = null;
+
+        // Try to initialize Firebase
+        try {
+            app = initializeApp(firebaseConfig);
+            database = getDatabase(app);
+            auth = getAuth(app);
+            window.firebaseReady = true;
+            
+            // Sign in anonymously when app loads
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    console.log('Authenticated with Firebase');
+                } else {
+                    signInAnonymously(auth).catch((error) => {
+                        console.error('Authentication error:', error);
+                        window.firebaseReady = false;
+                    });
+                }
+            });
+        } catch (error) {
+            console.warn('Firebase not configured. Running in local-only mode.');
+            window.firebaseReady = false;
+        }
+
+        // Make Firebase functions available globally
+        window.firebase = { app, database, auth, ref, set, onValue, off, push, remove };
+        window.currentTripCode = null;
+        window.isLocalMode = false;
+
         let people = [];
         let expenses = [];
 
@@ -265,7 +443,163 @@
             return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         }
 
-        function loadData() {
+        function generateTripCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        window.createTrip = function() {
+            if (!window.firebaseReady) {
+                alert('Firebase is not configured. Please add your Firebase config or use Local Mode.');
+                return;
+            }
+
+            const code = generateTripCode();
+            const tripRef = window.firebase.ref(window.firebase.database, `trips/${code}`);
+            
+            window.firebase.set(tripRef, {
+                created: Date.now(),
+                people: [],
+                expenses: []
+            }).then(() => {
+                joinTripWithCode(code);
+            }).catch(error => {
+                alert('Error creating trip: ' + error.message);
+            });
+        };
+
+        window.showJoinTrip = function() {
+            document.getElementById('joinTripForm').classList.remove('hidden');
+        };
+
+        window.hideJoinTrip = function() {
+            document.getElementById('joinTripForm').classList.add('hidden');
+            document.getElementById('joinTripCode').value = '';
+        };
+
+        window.joinTrip = function() {
+            if (!window.firebaseReady) {
+                alert('Firebase is not configured. Please add your Firebase config or use Local Mode.');
+                return;
+            }
+
+            const code = document.getElementById('joinTripCode').value.trim().toUpperCase();
+            if (!code) {
+                alert('Please enter a trip code');
+                return;
+            }
+
+            const tripRef = window.firebase.ref(window.firebase.database, `trips/${code}`);
+            window.firebase.onValue(tripRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    joinTripWithCode(code);
+                } else {
+                    alert('Trip not found. Please check the code and try again.');
+                }
+            }, { onlyOnce: true });
+        };
+
+        function joinTripWithCode(code) {
+            window.currentTripCode = code;
+            window.isLocalMode = false;
+            localStorage.setItem('currentTripCode', code);
+            
+            document.getElementById('tripSetup').classList.add('hidden');
+            document.getElementById('tripInfo').classList.remove('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('currentTripCode').textContent = code;
+            
+            setupFirebaseSync();
+        }
+
+        window.useLocalMode = function() {
+            window.isLocalMode = true;
+            window.currentTripCode = null;
+            localStorage.setItem('localMode', 'true');
+            localStorage.removeItem('currentTripCode');
+            
+            document.getElementById('tripSetup').classList.add('hidden');
+            document.getElementById('tripInfo').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            loadLocalData();
+            updateUI();
+        };
+
+        window.leaveTrip = function() {
+            if (confirm('Are you sure you want to leave this trip?')) {
+                if (tripListener) {
+                    const tripRef = window.firebase.ref(window.firebase.database, `trips/${window.currentTripCode}`);
+                    window.firebase.off(tripRef);
+                }
+                
+                window.currentTripCode = null;
+                window.isLocalMode = false;
+                localStorage.removeItem('currentTripCode');
+                localStorage.removeItem('localMode');
+                
+                people = [];
+                expenses = [];
+                
+                document.getElementById('tripSetup').classList.remove('hidden');
+                document.getElementById('tripInfo').classList.add('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+                
+                hideJoinTrip();
+            }
+        };
+
+        function setupFirebaseSync() {
+            const tripRef = window.firebase.ref(window.firebase.database, `trips/${window.currentTripCode}`);
+            
+            updateSyncStatus('online');
+            
+            tripListener = window.firebase.onValue(tripRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    people = data.people || [];
+                    expenses = data.expenses || [];
+                    updateUI();
+                    updateSyncStatus('online');
+                }
+            }, (error) => {
+                console.error('Firebase sync error:', error);
+                updateSyncStatus('offline');
+            });
+        }
+
+        function syncToFirebase() {
+            if (window.isLocalMode || !window.currentTripCode) return;
+            
+            const tripRef = window.firebase.ref(window.firebase.database, `trips/${window.currentTripCode}`);
+            window.firebase.set(tripRef, {
+                people: people,
+                expenses: expenses,
+                updated: Date.now()
+            }).catch(error => {
+                console.error('Error syncing to Firebase:', error);
+                updateSyncStatus('offline');
+            });
+        }
+
+        function updateSyncStatus(status) {
+            const indicator = document.getElementById('syncStatus');
+            const text = document.getElementById('syncStatusText');
+            
+            if (status === 'online') {
+                indicator.className = 'status-indicator status-online';
+                text.textContent = 'Connected & Syncing';
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                text.textContent = 'Connection Lost';
+            }
+        }
+
+        function loadLocalData() {
             const saved = localStorage.getItem('splitrData');
             if (saved) {
                 const data = JSON.parse(saved);
@@ -274,30 +608,42 @@
             }
         }
 
-        function saveData() {
-            localStorage.setItem('splitrData', JSON.stringify({ people, expenses }));
+        function saveLocalData() {
+            if (window.isLocalMode) {
+                localStorage.setItem('splitrData', JSON.stringify({ people, expenses }));
+            }
         }
 
-        function addPerson() {
+        window.addPerson = function() {
             const input = document.getElementById('personName');
             const name = input.value.trim();
             
             if (name && !people.includes(name)) {
                 people.push(name);
                 input.value = '';
-                saveData();
+                
+                if (window.isLocalMode) {
+                    saveLocalData();
+                } else {
+                    syncToFirebase();
+                }
                 updateUI();
             }
-        }
+        };
 
-        function removePerson(name) {
+        window.removePerson = function(name) {
             people = people.filter(p => p !== name);
             expenses = expenses.filter(e => e.paidBy !== name && !e.participants.includes(name));
-            saveData();
+            
+            if (window.isLocalMode) {
+                saveLocalData();
+            } else {
+                syncToFirebase();
+            }
             updateUI();
-        }
+        };
 
-        function addExpense() {
+        window.addExpense = function() {
             const desc = document.getElementById('expenseDesc').value.trim();
             const amount = parseFloat(document.getElementById('expenseAmount').value);
             const paidBy = document.getElementById('expensePaidBy').value;
@@ -308,18 +654,28 @@
                 expenses.push({ desc, amount, paidBy, participants });
                 document.getElementById('expenseDesc').value = '';
                 document.getElementById('expenseAmount').value = '';
-                saveData();
+                
+                if (window.isLocalMode) {
+                    saveLocalData();
+                } else {
+                    syncToFirebase();
+                }
                 updateUI();
             }
-        }
+        };
 
-        function removeExpense(index) {
+        window.removeExpense = function(index) {
             expenses.splice(index, 1);
-            saveData();
+            
+            if (window.isLocalMode) {
+                saveLocalData();
+            } else {
+                syncToFirebase();
+            }
             updateUI();
-        }
+        };
 
-        function calculateSettlement() {
+        window.calculateSettlement = function() {
             if (people.length === 0 || expenses.length === 0) {
                 document.getElementById('results').innerHTML = '<div class="empty-state">Add people and expenses first!</div>';
                 return;
@@ -383,7 +739,7 @@
             }
             html += '</div>';
             document.getElementById('results').innerHTML = html;
-        }
+        };
 
         function updateUI() {
             let peopleHTML = '';
@@ -441,16 +797,7 @@
             document.getElementById('results').innerHTML = '';
         }
 
-        function resetAll() {
-            if (confirm('Are you sure you want to reset everything?')) {
-                people = [];
-                expenses = [];
-                saveData();
-                updateUI();
-            }
-        }
-
-        function exportData() {
+        window.exportData = function() {
             const data = { people, expenses };
             const json = JSON.stringify(data, null, 2);
             const blob = new Blob([json], { type: 'application/json' });
@@ -462,9 +809,9 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        }
+        };
 
-        function importData(event) {
+        window.importData = function(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -480,7 +827,12 @@
                         }
                         people = data.people;
                         expenses = data.expenses;
-                        saveData();
+                        
+                        if (window.isLocalMode) {
+                            saveLocalData();
+                        } else {
+                            syncToFirebase();
+                        }
                         updateUI();
                         alert('Data imported successfully!');
                     } else {
@@ -492,10 +844,19 @@
             };
             reader.readAsText(file);
             event.target.value = '';
-        }
+        };
 
-        loadData();
-        updateUI();
+        // Initialize app on load
+        window.addEventListener('load', () => {
+            const savedTripCode = localStorage.getItem('currentTripCode');
+            const localMode = localStorage.getItem('localMode');
+            
+            if (localMode === 'true') {
+                useLocalMode();
+            } else if (savedTripCode && window.firebaseReady) {
+                joinTripWithCode(savedTripCode);
+            }
+        });
     </script>
 </body>
 </html>
