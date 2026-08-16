@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splitr - Split Expenses Easily</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-left: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .person-item, .expense-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .person-item span, .expense-item span {
+            font-weight: 500;
+        }
+
+        .remove-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .remove-btn:hover {
+            background: #ff3838;
+        }
+
+        .results {
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .settlement {
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .amount {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .expense-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .participant-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .checkbox-label input {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .trip-setup {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 30px;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+        }
+
+        .trip-setup h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .trip-code-display {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px dashed white;
+        }
+
+        .trip-code {
+            font-size: 2em;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin: 10px 0;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #2ecc71;
+        }
+
+        .status-offline {
+            background: #e74c3c;
+        }
+
+        .sync-status {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💸 Splitr</h1>
+            <p>Split expenses fairly and easily</p>
+        </div>
+
+        <div class="content">
+            <!-- Trip Setup Section -->
+            <div id="tripSetup" class="section">
+                <div class="trip-setup">
+                    <h2>🌍 Trip Setup</h2>
+                    <p style="margin-bottom: 20px;">Create a new trip or join an existing one</p>
+                    
+                    <div class="button-row" style="justify-content: center;">
+                        <button class="btn" onclick="createTrip()">Create New Trip</button>
+                        <button class="btn btn-secondary" onclick="showJoinTrip()">Join Existing Trip</button>
+                        <button class="btn btn-secondary" onclick="useLocalMode()">Use Locally (No Sync)</button>
+                    </div>
+
+                    <div id="joinTripForm" class="hidden" style="margin-top: 20px;">
+                        <input type="text" id="joinTripCode" placeholder="Enter trip code (e.g., ABC123)" 
+                               style="text-transform: uppercase; text-align: center; font-size: 1.2em; margin-bottom: 10px;">
+                        <div class="button-row" style="justify-content: center;">
+                            <button class="btn" onclick="joinTrip()">Join Trip</button>
+                            <button class="btn btn-secondary" onclick="hideJoinTrip()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trip Info (shown when in a trip) -->
+            <div id="tripInfo" class="section hidden">
+                <div class="alert alert-info">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>Trip Code: <span id="currentTripCode"></span></strong>
+                            <div style="margin-top: 5px;">
+                                <span class="status-indicator" id="syncStatus"></span>
+                                <span id="syncStatusText">Connecting...</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="leaveTrip()">Leave Trip</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main App Sections (hidden until trip is set) -->
+            <div id="mainApp" class="hidden">
+                <div class="section">
+                    <h2>👥 People</h2>
+                    <div class="input-group">
+                        <label for="personName">Add Person</label>
+                        <input type="text" id="personName" placeholder="Enter name">
+                    </div>
+                    <button class="btn" onclick="addPerson()">Add Person</button>
+                    <div id="peopleList" style="margin-top: 20px;"></div>
+                </div>
+
+                <div class="section">
+                    <h2>🧾 Expenses</h2>
+                    <div class="input-group">
+                        <label for="expenseDesc">Description</label>
+                        <input type="text" id="expenseDesc" placeholder="e.g., Dinner at restaurant">
+                    </div>
+                    <div class="input-group">
+                        <label for="expenseAmount">Amount</label>
+                        <input type="number" id="expenseAmount" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label for="expensePaidBy">Paid by</label>
+                        <select id="expensePaidBy"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Split between</label>
+                        <div id="participantCheckboxes" class="checkbox-group"></div>
+                    </div>
+                    <button class="btn" onclick="addExpense()">Add Expense</button>
+                    <div id="expensesList" style="margin-top: 20px;"></div>
+                </div>
+
+                <div class="section">
+                    <h2>💰 Settlement</h2>
+                    <div class="button-row">
+                        <button class="btn" onclick="calculateSettlement()">Calculate Who Owes What</button>
+                        <button class="btn btn-secondary" onclick="exportData()">Export JSON</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import JSON</button>
+                    </div>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                    <div id="results" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, set, onValue, off, push, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Firebase configuration - YOU NEED TO REPLACE THIS WITH YOUR OWN CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHRHTe9c_wDaqGka1a-0ni3vuO_0xTK6I",
+            authDomain: "splitr-de6c9.firebaseapp.com",
+            databaseURL: "https://splitr-de6c9-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "splitr-de6c9",
+            storageBucket: "splitr-de6c9.firebasestorage.app",
+            messagingSenderId: "903729937125",
+            appId: "1:903729937125:web:0412bd4918c8885427b20c",
+            measurementId: "G-STGC696QMV"
+        };
+
+        let app, database, auth;
+        let currentTripCode = null;
+        let isLocalMode = false;
+        let tripListener = null;
+        let currentUser = null;
+
+        // Try to initialize Firebase
+        try {
+            app = initializeApp(firebaseConfig);
+            database = getDatabase(app);
+            auth = getAuth(app);
+            window.firebaseReady = true;
+            
+            // Sign in anonymously when app loads
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    console.log('Authenticated with Firebase');
+                } else {
+                    signInAnonymously(auth).catch((error) => {
+                        console.error('Authentication error:', error);
+                        window.firebaseReady = false;
+                    });
+                }
+            });
+        } catch (error) {
+            console.warn('Firebase not configured. Running in local-only mode.');
+            window.firebaseReady = false;
+        }
+
+        // Make Firebase functions available globally
+        window.firebase = { app, database, auth, ref, set, onValue, off, push, remove };
+        window.currentTripCode = null;
+        window.isLocalMode = false;
+
+        let people = [];
+        let expenses = [];
+
+        function formatAmount(amount) {
+            return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function generateTripCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        window.createTrip = function() {
+            if (!window.firebaseReady) {
+                alert('Firebase is not configured. Please add your Firebase config or use Local Mode.');
+                return;
+            }
+
+            const code = generateTripCode();
+            const tripRef = window.firebase.ref(window.firebase.database, `trips/${code}`);
+            
+            window.firebase.set(tripRef, {
+                created: Date.now(),
+                people: [],
+                expenses: []
+            }).then(() => {
+                joinTripWithCode(code);
+            }).catch(error => {
+                alert('Error creating trip: ' + error.message);
+            });
+        };
+
+        window.showJoinTrip = function() {
+            document.getElementById('joinTripForm').classList.remove('hidden');
+        };
+
+        window.hideJoinTrip = function() {
+            document.getElementById('joinTripForm').classList.add('hidden');
+            document.getElementById('joinTripCode').value = '';
+        };
+
+        window.joinTrip = function() {
+            if (!window.firebaseReady) {
+                alert('Firebase is not configured. Please add your Firebase config or use Local Mode.');
+                return;
+            }
+
+            const code = document.getElementById('joinTripCode').value.trim().toUpperCase();
+            if (!code) {
+                alert('Please enter a trip code');
+                return;
+            }
+
+            const tripRef = window.firebase.ref(window.firebase.database, `trips/${code}`);
+            window.firebase.onValue(tripRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    joinTripWithCode(code);
+                } else {
+                    alert('Trip not found. Please check the code and try again.');
+                }
+            }, { onlyOnce: true });
+        };
+
+        function joinTripWithCode(code) {
+            window.currentTripCode = code;
+            window.isLocalMode = false;
+            localStorage.setItem('currentTripCode', code);
+            
+            document.getElementById('tripSetup').classList.add('hidden');
+            document.getElementById('tripInfo').classList.remove('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('currentTripCode').textContent = code;
+            
+            setupFirebaseSync();
+        }
+
+        window.useLocalMode = function() {
+            window.isLocalMode = true;
+            window.currentTripCode = null;
+            localStorage.setItem('localMode', 'true');
+            localStorage.removeItem('currentTripCode');
+            
+            document.getElementById('tripSetup').classList.add('hidden');
+            document.getElementById('tripInfo').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            loadLocalData();
+            updateUI();
+        };
+
+        window.leaveTrip = function() {
+            if (confirm('Are you sure you want to leave this trip?')) {
+                if (tripListener) {
+                    const tripRef = window.firebase.ref(window.firebase.database, `trips/${window.currentTripCode}`);
+                    window.firebase.off(tripRef);
+                }
+                
+                window.currentTripCode = null;
+                window.isLocalMode = false;
+                localStorage.removeItem('currentTripCode');
+                localStorage.removeItem('localMode');
+                
+                people = [];
+                expenses = [];
+                
+                document.getElementById('tripSetup').classList.remove('hidden');
+                document.getElementById('tripInfo').classList.add('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+                
+                hideJoinTrip();
+            }
+        };
+
+        function setupFirebaseSync() {
+            const tripRef = window.firebase.ref(window.firebase.database, `trips/${window.currentTripCode}`);
+            
+            updateSyncStatus('online');
+            
+            tripListener = window.firebase.onValue(tripRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    people = data.people || [];
+                    expenses = data.expenses || [];
+                    updateUI();
+                    updateSyncStatus('online');
+                }
+            }, (error) => {
+                console.error('Firebase sync error:', error);
+                updateSyncStatus('offline');
+            });
+        }
+
+        function syncToFirebase() {
+            if (window.isLocalMode || !window.currentTripCode) return;
+            
+            const tripRef = window.firebase.ref(window.firebase.database, `trips/${window.currentTripCode}`);
+            window.firebase.set(tripRef, {
+                people: people,
+                expenses: expenses,
+                updated: Date.now()
+            }).catch(error => {
+                console.error('Error syncing to Firebase:', error);
+                updateSyncStatus('offline');
+            });
+        }
+
+        function updateSyncStatus(status) {
+            const indicator = document.getElementById('syncStatus');
+            const text = document.getElementById('syncStatusText');
+            
+            if (status === 'online') {
+                indicator.className = 'status-indicator status-online';
+                text.textContent = 'Connected & Syncing';
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                text.textContent = 'Connection Lost';
+            }
+        }
+
+        function loadLocalData() {
+            const saved = localStorage.getItem('splitrData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                people = data.people || [];
+                expenses = data.expenses || [];
+            }
+        }
+
+        function saveLocalData() {
+            if (window.isLocalMode) {
+                localStorage.setItem('splitrData', JSON.stringify({ people, expenses }));
+            }
+        }
+
+        window.addPerson = function() {
+            const input = document.getElementById('personName');
+            const name = input.value.trim();
+            
+            if (name && !people.includes(name)) {
+                people.push(name);
+                input.value = '';
+                
+                if (window.isLocalMode) {
+                    saveLocalData();
+                } else {
+                    syncToFirebase();
+                }
+                updateUI();
+            }
+        };
+
+        window.removePerson = function(name) {
+            people = people.filter(p => p !== name);
+            expenses = expenses.filter(e => e.paidBy !== name && !e.participants.includes(name));
+            
+            if (window.isLocalMode) {
+                saveLocalData();
+            } else {
+                syncToFirebase();
+            }
+            updateUI();
+        };
+
+        window.addExpense = function() {
+            const desc = document.getElementById('expenseDesc').value.trim();
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const paidBy = document.getElementById('expensePaidBy').value;
+            const checkboxes = document.querySelectorAll('#participantCheckboxes input:checked');
+            const participants = Array.from(checkboxes).map(cb => cb.value);
+
+            if (desc && amount > 0 && paidBy && participants.length > 0) {
+                expenses.push({ desc, amount, paidBy, participants });
+                document.getElementById('expenseDesc').value = '';
+                document.getElementById('expenseAmount').value = '';
+                
+                if (window.isLocalMode) {
+                    saveLocalData();
+                } else {
+                    syncToFirebase();
+                }
+                updateUI();
+            }
+        };
+
+        window.removeExpense = function(index) {
+            expenses.splice(index, 1);
+            
+            if (window.isLocalMode) {
+                saveLocalData();
+            } else {
+                syncToFirebase();
+            }
+            updateUI();
+        };
+
+        window.calculateSettlement = function() {
+            if (people.length === 0 || expenses.length === 0) {
+                document.getElementById('results').innerHTML = '<div class="empty-state">Add people and expenses first!</div>';
+                return;
+            }
+
+            const balances = {};
+            people.forEach(person => balances[person] = 0);
+
+            expenses.forEach(expense => {
+                const share = expense.amount / expense.participants.length;
+                balances[expense.paidBy] += expense.amount;
+                expense.participants.forEach(participant => {
+                    balances[participant] -= share;
+                });
+            });
+
+            const settlements = [];
+            const debtors = [];
+            const creditors = [];
+
+            for (const [person, balance] of Object.entries(balances)) {
+                if (balance < -0.01) {
+                    debtors.push({ person, amount: -balance });
+                } else if (balance > 0.01) {
+                    creditors.push({ person, amount: balance });
+                }
+            }
+
+            debtors.sort((a, b) => b.amount - a.amount);
+            creditors.sort((a, b) => b.amount - a.amount);
+
+            let i = 0, j = 0;
+            while (i < debtors.length && j < creditors.length) {
+                const debtor = debtors[i];
+                const creditor = creditors[j];
+                const amount = Math.min(debtor.amount, creditor.amount);
+
+                settlements.push({
+                    from: debtor.person,
+                    to: creditor.person,
+                    amount: amount
+                });
+
+                debtor.amount -= amount;
+                creditor.amount -= amount;
+
+                if (debtor.amount < 0.01) i++;
+                if (creditor.amount < 0.01) j++;
+            }
+
+            let html = '<div class="results">';
+            if (settlements.length === 0) {
+                html += '<div class="empty-state">All settled up! 🎉</div>';
+            } else {
+                settlements.forEach(s => {
+                    html += `<div class="settlement">
+                        <strong>${s.from}</strong> pays <strong>${s.to}</strong> 
+                        <span class="amount">${formatAmount(s.amount)}</span>
+                    </div>`;
+                });
+            }
+            html += '</div>';
+            document.getElementById('results').innerHTML = html;
+        };
+
+        function updateUI() {
+            let peopleHTML = '';
+            if (people.length === 0) {
+                peopleHTML = '<div class="empty-state">No people added yet</div>';
+            } else {
+                people.forEach(person => {
+                    peopleHTML += `<div class="person-item">
+                        <span>${person}</span>
+                        <button class="remove-btn" onclick="removePerson('${person}')">Remove</button>
+                    </div>`;
+                });
+            }
+            document.getElementById('peopleList').innerHTML = peopleHTML;
+
+            const paidBySelect = document.getElementById('expensePaidBy');
+            paidBySelect.innerHTML = '<option value="">Select person</option>';
+            people.forEach(person => {
+                paidBySelect.innerHTML += `<option value="${person}">${person}</option>`;
+            });
+
+            let checkboxHTML = '';
+            if (people.length === 0) {
+                checkboxHTML = '<div class="empty-state">Add people first</div>';
+            } else {
+                people.forEach(person => {
+                    checkboxHTML += `<label class="checkbox-label">
+                        <input type="checkbox" value="${person}" checked> ${person}
+                    </label>`;
+                });
+            }
+            document.getElementById('participantCheckboxes').innerHTML = checkboxHTML;
+
+            let expensesHTML = '';
+            if (expenses.length === 0) {
+                expensesHTML = '<div class="empty-state">No expenses added yet</div>';
+            } else {
+                expenses.forEach((expense, index) => {
+                    expensesHTML += `<div class="expense-item">
+                        <div>
+                            <span>${expense.desc}</span>
+                            <div class="expense-details">
+                                ${formatAmount(expense.amount)} paid by ${expense.paidBy}
+                            </div>
+                            <div class="participant-tags">
+                                ${expense.participants.map(p => `<span class="tag">${p}</span>`).join('')}
+                            </div>
+                        </div>
+                        <button class="remove-btn" onclick="removeExpense(${index})">Remove</button>
+                    </div>`;
+                });
+            }
+            document.getElementById('expensesList').innerHTML = expensesHTML;
+
+            document.getElementById('results').innerHTML = '';
+        }
+
+        window.exportData = function() {
+            const data = { people, expenses };
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `splitr-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        window.importData = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.people && data.expenses) {
+                        if (people.length > 0 || expenses.length > 0) {
+                            if (!confirm('This will replace your current data. Continue?')) {
+                                return;
+                            }
+                        }
+                        people = data.people;
+                        expenses = data.expenses;
+                        
+                        if (window.isLocalMode) {
+                            saveLocalData();
+                        } else {
+                            syncToFirebase();
+                        }
+                        updateUI();
+                        alert('Data imported successfully!');
+                    } else {
+                        alert('Invalid file format. Please select a valid Splitr export file.');
+                    }
+                } catch (error) {
+                    alert('Error reading file. Please select a valid JSON file.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        };
+
+        // Initialize app on load
+        window.addEventListener('load', () => {
+            const savedTripCode = localStorage.getItem('currentTripCode');
+            const localMode = localStorage.getItem('localMode');
+            
+            if (localMode === 'true') {
+                useLocalMode();
+            } else if (savedTripCode && window.firebaseReady) {
+                joinTripWithCode(savedTripCode);
+            }
+        });
+    </script>
+</body>
+</html>
