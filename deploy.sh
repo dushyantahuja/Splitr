@@ -18,10 +18,6 @@ echo "======================================================"
 
 cd "$PROJECT_DIR"
 
-# Ensure index.html is synced from Splitr.html if present
-if [ -f "$PROJECT_DIR/Splitr.html" ]; then
-  cp "$PROJECT_DIR/Splitr.html" "$PROJECT_DIR/index.html"
-fi
 
 # ------------------------------------------------------------------------------
 # 1. Git Commit & Push
