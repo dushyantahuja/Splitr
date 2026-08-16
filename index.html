@@ -322,9 +322,10 @@
             <!-- Trip Info (shown when in a trip) -->
             <div id="tripInfo" class="section hidden">
                 <div class="alert alert-info">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div>
                             <strong>Trip Code: <span id="currentTripCode"></span></strong>
+                            <span style="display: inline-block; margin-left: 8px; background: rgba(0,0,0,0.07); padding: 2px 8px; border-radius: 12px; font-size: 0.85em;">🔒 Encrypted</span>
                             <div style="margin-top: 5px;">
                                 <span class="status-indicator" id="syncStatus"></span>
                                 <span id="syncStatusText">Connecting...</span>
@@ -452,7 +453,88 @@
             return code;
         }
 
-        window.createTrip = function() {
+        // ---------------------------------------------------------------------
+        // End-to-End Encryption Helpers (AES-256-GCM via Web Crypto API)
+        // Derived deterministically from the Trip Code
+        // ---------------------------------------------------------------------
+        async function getEncryptionKey(code) {
+            const normalizedCode = (code || '').trim().toUpperCase();
+            const enc = new TextEncoder();
+            const hashBuffer = await window.crypto.subtle.digest(
+                'SHA-256',
+                enc.encode(`splitr-e2ee-key:${normalizedCode}`)
+            );
+            return window.crypto.subtle.importKey(
+                'raw',
+                hashBuffer,
+                { name: 'AES-GCM' },
+                false,
+                ['encrypt', 'decrypt']
+            );
+        }
+
+        function bufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        function base64ToBuffer(base64) {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        async function encryptData(dataObj, code) {
+            const key = await getEncryptionKey(code);
+            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+            const enc = new TextEncoder();
+            const encodedPayload = enc.encode(JSON.stringify(dataObj));
+            const ciphertextBuffer = await window.crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv: iv },
+                key,
+                encodedPayload
+            );
+            return {
+                encrypted: true,
+                iv: bufferToBase64(iv),
+                payload: bufferToBase64(ciphertextBuffer)
+            };
+        }
+
+        async function decryptData(storedObj, code) {
+            if (!storedObj) return { people: [], expenses: [] };
+            // Support backward compatibility if plain unencrypted object exists
+            if (!storedObj.payload || !storedObj.iv) {
+                return {
+                    people: storedObj.people || [],
+                    expenses: storedObj.expenses || []
+                };
+            }
+            try {
+                const key = await getEncryptionKey(code);
+                const iv = base64ToBuffer(storedObj.iv);
+                const ciphertext = base64ToBuffer(storedObj.payload);
+                const decryptedBuffer = await window.crypto.subtle.decrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    key,
+                    ciphertext
+                );
+                const decodedText = new TextDecoder().decode(decryptedBuffer);
+                return JSON.parse(decodedText);
+            } catch (err) {
+                console.error('Decryption failed for code:', code, err);
+                throw new Error('Failed to decrypt trip data');
+            }
+        }
+
+        window.createTrip = async function() {
             if (!window.firebaseReady) {
                 alert('Firebase is not configured. Please add your Firebase config or use Local Mode.');
                 return;
@@ -461,15 +543,16 @@
             const code = generateTripCode();
             const tripRef = window.firebase.ref(window.firebase.database, `trips/${code}`);
             
-            window.firebase.set(tripRef, {
-                created: Date.now(),
-                people: [],
-                expenses: []
-            }).then(() => {
+            try {
+                const encrypted = await encryptData({ people: [], expenses: [] }, code);
+                await window.firebase.set(tripRef, {
+                    created: Date.now(),
+                    ...encrypted
+                });
                 joinTripWithCode(code);
-            }).catch(error => {
+            } catch (error) {
                 alert('Error creating trip: ' + error.message);
-            });
+            }
         };
 
         window.showJoinTrip = function() {
@@ -558,13 +641,19 @@
             
             updateSyncStatus('online');
             
-            tripListener = window.firebase.onValue(tripRef, (snapshot) => {
+            tripListener = window.firebase.onValue(tripRef, async (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    people = data.people || [];
-                    expenses = data.expenses || [];
-                    updateUI();
-                    updateSyncStatus('online');
+                    try {
+                        const decrypted = await decryptData(data, window.currentTripCode);
+                        people = decrypted.people || [];
+                        expenses = decrypted.expenses || [];
+                        updateUI();
+                        updateSyncStatus('online');
+                    } catch (e) {
+                        console.error('Firebase sync decryption error:', e);
+                        updateSyncStatus('offline');
+                    }
                 }
             }, (error) => {
                 console.error('Firebase sync error:', error);
@@ -572,18 +661,20 @@
             });
         }
 
-        function syncToFirebase() {
+        async function syncToFirebase() {
             if (window.isLocalMode || !window.currentTripCode) return;
             
             const tripRef = window.firebase.ref(window.firebase.database, `trips/${window.currentTripCode}`);
-            window.firebase.set(tripRef, {
-                people: people,
-                expenses: expenses,
-                updated: Date.now()
-            }).catch(error => {
+            try {
+                const encrypted = await encryptData({ people, expenses }, window.currentTripCode);
+                await window.firebase.set(tripRef, {
+                    ...encrypted,
+                    updated: Date.now()
+                });
+            } catch (error) {
                 console.error('Error syncing to Firebase:', error);
                 updateSyncStatus('offline');
-            });
+            }
         }
 
         function updateSyncStatus(status) {
